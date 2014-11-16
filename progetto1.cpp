@@ -38,7 +38,7 @@ void scrivi(int max) {
     fs.open("output.txt", ios::out);
     
     fs << max;
-    cout << max;
+    cout << max << endl;
 
     fs.close();
 }
@@ -145,7 +145,6 @@ int numcammini(const Grafo &g, stack<int> toporder, int from, int to) {
 
     //cout << endl; cout << "ccg "; scrivi(g);
     //cout << endl; cout << "cammini "; scrivi(cammini);
-    cout << cammini[to] << endl;
     return cammini[to];
 }
 
@@ -164,6 +163,7 @@ int main() {
     topSort(ccg, toporder);
 
     int num = numcammini(ccg, toporder, scc->at(start), scc->at(end));
+    scrivi(num);
 
     delete scc;
 }
