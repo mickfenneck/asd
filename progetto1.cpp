@@ -57,13 +57,16 @@ void ccdfs(const Grafo &g, int u, int counter, vector<int> &id) {
 
 vector<int> *trova_cc(const Grafo &g, stack<int> s) {
     vector<int> *id = new vector<int>(g.size(), 0);
-    int counter = -1;
+    int counter = 0;
 
     while(!s.empty()) {
         int u = s.top(); s.pop();
         if(!id->at(u))
             ccdfs(g, u, ++counter, *id);
     }
+
+    for(int i = 0; i < g.size(); i++)
+        id->at(i) = id->at(i) - 1;
 
     return id;
 }
