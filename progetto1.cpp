@@ -44,36 +44,34 @@ void scrivi(int max) {
 }
 
 void ccdfs(const Grafo &g, int u, int counter, vector<int> &id) {
-    id[u] = counter + 1;
+    id[u] = counter;
 
     for(vector<int>::const_iterator
-        it = g[u].begin(),
-        end = g[u].end();
+        it = g[u].begin(), end = g[u].end();
         it != end; ++it) {
     
         if(id[*it] == 0)
-            ccdfs(g, *it, counter++, id);
+            ccdfs(g, *it, counter, id);
     }
 }
 
 vector<int> *trova_cc(const Grafo &g, stack<int> s) {
     vector<int> *id = new vector<int>(g.size(), 0);
-    int counter = 0;
+    int counter = -1;
 
     while(!s.empty()) {
         int u = s.top(); s.pop();
         if(!id->at(u))
-            ccdfs(g, u, counter++, *id);
+            ccdfs(g, u, ++counter, *id);
     }
 
     return id;
 }
 
-void tsdfs(const Grafo &g, int u, bool *visitato, stack<int> &s) {
+void tsdfs(const Grafo &g, int u, vector<bool> &visitato, stack<int> &s) {
     visitato[u] = true;
     for(vector<int>::const_iterator
-        it = g[u].begin(),
-        end = g[u].end();
+        it = g[u].begin(), end = g[u].end();
         it != end; ++it) {
     
         if(!visitato[*it])
@@ -85,15 +83,12 @@ void tsdfs(const Grafo &g, int u, bool *visitato, stack<int> &s) {
 
 void topSort(const Grafo &g, stack<int> &s) {
     int n = g.size();
-    bool *visitato = new bool[n];
-    for(int i = 0; i < n; i++)
-        visitato[i] = false;
+    vector<bool> visitato(n, false);
 
     for(int i = 0; i < n; i++) {
         if(!visitato[i])
             tsdfs(g, i, visitato, s);
     }
-    delete visitato;
 }
 
 vector<int> *trova_scc(const Grafo &g, const Grafo &gt) {
@@ -103,8 +98,9 @@ vector<int> *trova_scc(const Grafo &g, const Grafo &gt) {
     return trova_cc(gt, s);
 }
 
-Grafo *costruisci_ccg(const Grafo &g, const vector<int> &scc) {
-    Grafo *ccg = new Grafo(g.size(), vector<int>());
+void costruisci_ccg(const Grafo &g, const vector<int> &scc, Grafo &ccg) {
+    for(int i = 0; i < g.size(); i++)
+        ccg.push_back(vector<int>());
 
     for(int i = 0; i < g.size(); i++) {
         int questa_scc = scc[i];
@@ -114,37 +110,9 @@ Grafo *costruisci_ccg(const Grafo &g, const vector<int> &scc) {
             int altra_scc = scc[adiacenti[j]];
 
             if(questa_scc != altra_scc)
-                ccg->at(questa_scc).push_back(altra_scc);
+                ccg[questa_scc].push_back(altra_scc);
         }
     }
-
-    return ccg;
-}
-
-int conta_bfs(const Grafo &g, int node_start, int node_end) {
-    int count = 0;
-
-    queue<int> frontiera;
-
-    frontiera.push(node_start);
-
-    while(!frontiera.empty()) {
-        int v = frontiera.front();
-        frontiera.pop();
-
-        for(vector<int>::const_iterator
-            it = g[v].begin(),
-            end = g[v].end();
-            it != end; ++it) {
-
-            if(*it == node_end)
-                count += 1;
-            else
-                frontiera.push(*it);
-        }
-    }
-
-    return count;
 }
 
 void scrivi(const vector<int> &v) {
@@ -153,26 +121,49 @@ void scrivi(const vector<int> &v) {
     cout << endl;
 }
 
+void scrivi(const Grafo &g) {
+    for(int i = 0; i < g.size(); i++) {
+        cout << i << " - "; scrivi(g[i]);
+    }
+}
+
+int numcammini(const Grafo &g, stack<int> toporder, int from, int to) {
+    vector<int> cammini(toporder.size(), 0);
+    cammini[from] = 1;
+
+    while(!toporder.empty()) {
+        int v = toporder.top(); toporder.pop();
+        int count_to_here = cammini[v];
+
+        for(vector<int>::const_iterator
+            it = g[v].begin(), end = g[v].end();
+            it != end; ++it) {
+        
+            cammini[*it] += count_to_here;
+        }
+    }
+
+    //cout << endl; cout << "ccg "; scrivi(g);
+    //cout << endl; cout << "cammini "; scrivi(cammini);
+    cout << cammini[to] << endl;
+    return cammini[to];
+}
+
 int main() {
-    Grafo g, gt, *ccg;
+    Grafo g, gt, ccg;
     int start, end;
     leggi(g, gt, start, end);
 
     vector<int> *scc = trova_scc(g, gt);
-    //scrivi(*scc);
 
-    ccg = costruisci_ccg(g, *scc);
-    cout << "---" << endl;
+    costruisci_ccg(g, *scc, ccg);
+    //cout << "scc "; scrivi(*scc);
+    //cout << "---" << endl;
 
-    /*
-    for(int i = 0; i < ccg->size(); i++) {
-        cout << i << " - ";
-        scrivi(ccg->at(i));
-    }*/
+    stack<int> toporder;
+    topSort(ccg, toporder);
 
-    int num = conta_bfs(*ccg, scc->at(start), scc->at(end));
-    scrivi(num);
+    int num = numcammini(ccg, toporder, scc->at(start), scc->at(end));
 
     delete scc;
-    delete ccg;
 }
