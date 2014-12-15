@@ -52,39 +52,40 @@ int ****costruisciMatrice(int n1, int n2, int n3, int n4, int val) {
 }
 
 // indica se la parte da i a j è liberabile potendo eliminare anche l'inizio s o la fine e
-int liberabile(const string triangoli, int ****D, int i, int j, int s, int e) {
-    if(j < 0 || i < 0 || i >= triangoli.length() || j > triangoli.length())
+int liberabile(const char *triangoli, int n, int ****D, int i, int j, int s, int e) {
+    if(j < 0 || i < 0 || i >= n || j >= n || j - i < 0)
         return 1;
-
-    if(j - i < 0) {
-        D[i][j][s][e] = 1;
-        return 1;
-    }
 
     if(D[i][j][s][e] < 0) {
-        int start = s ? i : i + 1,
-            end = e ? j : j - 1,
-            liberato = 0;
+        int liberato = 0;
 
-        for(int k = start; k <= end; k++) {
+        for(int k = i + s; k <= j - e; k++) {
             if(triangoli[k] == 's') {
-                for(int l = i; l < k; l++) {
-                    int lib_il = liberabile(triangoli, D, i, l - 1, s, 1),
-                        lib_lk = liberabile(triangoli, D, l + 1, k - 1, 1, 1),
-                        lib_kj = liberabile(triangoli, D, k + 1, j, 1, e);
+                for(int l = i; l < k && !liberato; l++) {
+                    int lib_il = liberabile(triangoli, n, D, i, l - 1, s, 0);
+                    if(!lib_il) continue;
 
-                    if(lib_il && lib_lk && lib_kj)
-                        liberato = 1;
+                    int lib_lk = liberabile(triangoli, n, D, l + 1, k - 1, 0, 0);
+                    if(!lib_lk) continue;
+
+                    int lib_kj = liberabile(triangoli, n, D, k + 1, j, 0, e);
+                    if(!lib_kj) continue;
+
+                    liberato = 1;
                 }
             }
             else {
-                for(int l = k + 1; l <= j; l++) {
-                    int lib_ik = liberabile(triangoli, D, i, k - 1, s, 1),
-                        lib_kl = liberabile(triangoli, D, k + 1, l - 1, 1, 1),
-                        lib_lj = liberabile(triangoli, D, l + 1, j, 1, e);
+                for(int l = k + 1; l <= j && !liberato; l++) {
+                    int lib_ik = liberabile(triangoli, n, D, i, k - 1, s, 0);
+                    if(!lib_ik) continue;
 
-                    if(lib_ik && lib_kl && lib_lj)
-                        liberato = 1;
+                    int lib_kl = liberabile(triangoli, n, D, k + 1, l - 1, 0, 0);
+                    if(!lib_kl) continue;
+
+                    int lib_lj = liberabile(triangoli, n, D, l + 1, j, 0, e);
+                    if(!lib_lj) continue;
+
+                    liberato = 1;
                 }
             }
         }
@@ -98,12 +99,10 @@ int liberabile(const string triangoli, int ****D, int i, int j, int s, int e) {
     return D[i][j][s][e];
 }
 
-void calcola(const string triangoli, int ****D, vector<int> &rimane) {
-    int n = triangoli.length();
-
-    for(int i = 0; i < n; i += 1) {
-        int libs = liberabile(triangoli, D, 0, i - 1, 0, 1),
-            libd = liberabile(triangoli, D, i + 1, n - 1, 1, 0);
+void calcola(const char *triangoli, int n, int ****D, vector<int> &rimane) {
+    for(int i = 0; i < n; i++) {
+        int libs = liberabile(triangoli, n, D, 0, i - 1, 1, 0),
+            libd = liberabile(triangoli, n, D, i + 1, n - 1, 0, 1);
 
         if(libs && libd) {
             cout << "---  " << i << " rimane" << endl;
@@ -118,10 +117,11 @@ int main(int argc, char *argv[]) {
     else triangoli = leggi(argv[1]);
 
     cout << triangoli << endl;
+    const char *s = triangoli.c_str();
 
     int ****D = costruisciMatrice(triangoli.length(), triangoli.length(), 2, 2, -1);
     vector<int> rimane;
-    calcola(triangoli, D, rimane);
+    calcola(s, triangoli.length(), D, rimane);
 
     scrivi(rimane);
 }
